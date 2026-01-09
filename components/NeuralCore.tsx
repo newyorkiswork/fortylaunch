@@ -88,11 +88,15 @@ const NeuralCore: React.FC<NeuralCoreProps> = ({ isOpen, onClose, dataContext, o
             // Safe access for process.env to prevent ReferenceError in browser-only environments
             const apiKey = typeof process !== 'undefined' && process.env ? process.env.API_KEY : undefined;
 
+            // Debug log to help troubleshoot
+            console.log('Sentinel Core: API Key present?', !!apiKey);
+
             let aiResponseText = '';
             let actionToTake: AIAction = { type: 'NONE' };
             let assignedAgent = 'Sentinel Core';
 
             if (apiKey) {
+                console.log('Sentinel Core: Connecting to Gemini API...');
                 const ai = new GoogleGenAI({ apiKey });
 
                 const contextString = JSON.stringify({
