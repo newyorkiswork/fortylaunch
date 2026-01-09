@@ -476,17 +476,18 @@ const LiveVoiceSession: React.FC<LiveVoiceSessionProps> = ({ isOpen, onClose, us
                     <p className="text-textSecondary text-sm">Commands: "Generate Invoice", "Scan Receipt", "Update Pipeline"</p>
                 </div>
 
-                {/* Demo Controls */}
-                {status === 'demo' && (
-                    <div className="flex gap-3 flex-wrap justify-center mt-4">
-                        <button onClick={() => { speak('Signing contract for KPMG'); simulateTool('signContract', { contractName: 'KPMG' }); }} className="px-3 py-2 bg-white/10 rounded-lg text-xs font-bold text-white flex items-center gap-2 hover:bg-white/20">
-                            <Terminal size={14} /> Test: Sign Contract
-                        </button>
-                        <button onClick={() => { speak('Setting lights to focus mode'); simulateTool('controlLight', { mode: 'focus' }); }} className="px-3 py-2 bg-white/10 rounded-lg text-xs font-bold text-white flex items-center gap-2 hover:bg-white/20">
-                            <Terminal size={14} /> Test: Lights
-                        </button>
-                    </div>
-                )}
+                {/* Demo/Test Controls - Always visible */}
+                <div className="flex gap-3 flex-wrap justify-center mt-4">
+                    <button onClick={() => { speak('Signing contract for KPMG'); simulateTool('signContract', { contractName: 'KPMG' }); }} className="px-3 py-2 bg-white/10 rounded-lg text-xs font-bold text-white flex items-center gap-2 hover:bg-white/20 border border-white/10">
+                        <Terminal size={14} /> Test: Sign Contract
+                    </button>
+                    <button onClick={() => { speak('Setting lights to focus mode'); simulateTool('controlLight', { mode: 'focus' }); }} className="px-3 py-2 bg-white/10 rounded-lg text-xs font-bold text-white flex items-center gap-2 hover:bg-white/20 border border-white/10">
+                        <Terminal size={14} /> Test: Lights
+                    </button>
+                    <button onClick={() => { speak('Logging activity from voice command'); simulateTool('logActivity', { source: 'Voice', summary: 'Voice test command' }); }} className="px-3 py-2 bg-white/10 rounded-lg text-xs font-bold text-white flex items-center gap-2 hover:bg-white/20 border border-white/10">
+                        <Terminal size={14} /> Test: Log Activity
+                    </button>
+                </div>
 
                 {/* Transcript Display */}
                 {transcript && (status === 'demo' || status === 'connected') && (
@@ -540,10 +541,10 @@ const LiveVoiceSession: React.FC<LiveVoiceSessionProps> = ({ isOpen, onClose, us
                             setIsMicOn(!isMicOn);
                         }}
                         className={`p-6 rounded-full transition-all duration-300 ${isListening
-                                ? 'bg-green-500 text-white shadow-[0_0_30px_rgba(34,197,94,0.6)] animate-pulse'
-                                : isMicOn
-                                    ? 'bg-accentPurple text-white shadow-[0_0_30px_rgba(168,85,247,0.4)]'
-                                    : 'bg-red-500/20 text-red-500 border border-red-500/50'
+                            ? 'bg-green-500 text-white shadow-[0_0_30px_rgba(34,197,94,0.6)] animate-pulse'
+                            : isMicOn
+                                ? 'bg-accentPurple text-white shadow-[0_0_30px_rgba(168,85,247,0.4)]'
+                                : 'bg-red-500/20 text-red-500 border border-red-500/50'
                             }`}
                     >
                         {isMicOn ? <Mic size={32} /> : <MicOff size={32} />}
