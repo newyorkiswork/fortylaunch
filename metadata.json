@@ -1,0 +1,8 @@
+{
+  "name": "Fortylaunch",
+  "description": "Enterprise AI Orchestrator. Voice-first pipeline management for high-velocity teams.",
+  "requestFramePermissions": [
+    "microphone",
+    "camera"
+  ]
+}
