@@ -269,8 +269,8 @@ const LiveVoiceSession: React.FC<LiveVoiceSessionProps> = ({ isOpen, onClose, us
   };
 
   const simulateTool = (toolName: string, args: any) => {
-      // Mock a server message triggering a tool call
-      const mockMsg: LiveServerMessage = {
+      // Mock a server message triggering a tool call (partial mock for demo mode)
+      const mockMsg = {
           toolCall: {
               functionCalls: [{
                   id: `mock-${Date.now()}`,
@@ -278,7 +278,7 @@ const LiveVoiceSession: React.FC<LiveVoiceSessionProps> = ({ isOpen, onClose, us
                   args: args
               }]
           }
-      };
+      } as LiveServerMessage;
       // We don't have a real output context in demo mode usually, but let's create one on the fly if needed
       // or just bypass audio for the tool simulation
       const mockCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
