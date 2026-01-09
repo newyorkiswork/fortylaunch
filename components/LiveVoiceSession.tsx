@@ -15,6 +15,21 @@ const LiveVoiceSession: React.FC<LiveVoiceSessionProps> = ({ isOpen, onClose, us
     const [status, setStatus] = useState<'connecting' | 'connected' | 'error' | 'disconnected' | 'demo'>('disconnected');
     const [isMicOn, setIsMicOn] = useState(true);
     const [volumeLevel, setVolumeLevel] = useState(0);
+    const [selectedLanguage, setSelectedLanguage] = useState<string>('en-US');
+    const [showLanguageMenu, setShowLanguageMenu] = useState(false);
+    const [transcript, setTranscript] = useState('');
+    const [isListening, setIsListening] = useState(false);
+    const recognitionRef = useRef<any>(null);
+
+    const languages = [
+        { code: 'en-US', name: 'English (US)' },
+        { code: 'en-GB', name: 'English (UK)' },
+        { code: 'es-ES', name: 'Spanish' },
+        { code: 'fr-FR', name: 'French' },
+        { code: 'de-DE', name: 'German' },
+        { code: 'zh-CN', name: 'Mandarin' },
+        { code: 'ja-JP', name: 'Japanese' },
+    ];
 
     // Audio Context Refs
     const audioContextRef = useRef<AudioContext | null>(null);
@@ -68,6 +83,7 @@ const LiveVoiceSession: React.FC<LiveVoiceSessionProps> = ({ isOpen, onClose, us
     useEffect(() => {
         if (isOpen) {
             startSession();
+            setupSpeechRecognition();
         } else {
             stopSession();
         }
@@ -79,6 +95,77 @@ const LiveVoiceSession: React.FC<LiveVoiceSessionProps> = ({ isOpen, onClose, us
     useEffect(() => {
         statusRef.current = status;
     }, [status]);
+
+    // Setup Speech Recognition for demo mode
+    const setupSpeechRecognition = () => {
+        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+        if (SpeechRecognition) {
+            const recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = selectedLanguage;
+
+            recognition.onresult = (event: any) => {
+                const transcript = Array.from(event.results)
+                    .map((result: any) => result[0].transcript)
+                    .join('');
+                setTranscript(transcript);
+
+                // Process voice commands in demo mode
+                if (statusRef.current === 'demo' && event.results[event.results.length - 1].isFinal) {
+                    processDemoCommand(transcript.toLowerCase());
+                }
+            };
+
+            recognition.onstart = () => setIsListening(true);
+            recognition.onend = () => setIsListening(false);
+            recognition.onerror = (e: any) => console.error('Speech error:', e.error);
+
+            recognitionRef.current = recognition;
+        }
+    };
+
+    // Speak function using Web Speech API
+    const speak = (text: string) => {
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = selectedLanguage;
+        utterance.rate = 0.9;
+        utterance.pitch = 1;
+        window.speechSynthesis.speak(utterance);
+    };
+
+    // Process voice commands in demo mode
+    const processDemoCommand = (command: string) => {
+        if (command.includes('invoice') || command.includes('generate')) {
+            speak('Generating invoice for the selected client. Invoice has been saved to your documents.');
+            simulateTool('logActivity', { source: 'Voice', summary: 'Invoice generation requested' });
+        } else if (command.includes('receipt') || command.includes('scan')) {
+            speak('Scanning receipt. Payment has been logged and pipeline updated.');
+            simulateTool('logActivity', { source: 'Voice', summary: 'Receipt scanned' });
+        } else if (command.includes('sign') || command.includes('contract')) {
+            speak('Opening biometric authentication for contract signing.');
+            simulateTool('signContract', { contractName: 'KPMG' });
+        } else if (command.includes('light') || command.includes('focus') || command.includes('relax')) {
+            const mode = command.includes('focus') ? 'focus' : command.includes('relax') ? 'relax' : 'standard';
+            speak(`Setting room lights to ${mode} mode.`);
+            simulateTool('controlLight', { mode });
+        } else {
+            speak('Command received. Processing your request through Sentinel Core.');
+        }
+    };
+
+    // Toggle voice listening
+    const toggleVoiceListening = () => {
+        if (!recognitionRef.current) {
+            setupSpeechRecognition();
+        }
+
+        if (isListening) {
+            recognitionRef.current?.stop();
+        } else {
+            recognitionRef.current?.start();
+        }
+    };
 
     const startSession = async () => {
         setStatus('connecting');
@@ -392,28 +479,81 @@ const LiveVoiceSession: React.FC<LiveVoiceSessionProps> = ({ isOpen, onClose, us
                 {/* Demo Controls */}
                 {status === 'demo' && (
                     <div className="flex gap-3 flex-wrap justify-center mt-4">
-                        <button onClick={() => simulateTool('signContract', { contractName: 'KPMG' })} className="px-3 py-2 bg-white/10 rounded-lg text-xs font-bold text-white flex items-center gap-2 hover:bg-white/20">
+                        <button onClick={() => { speak('Signing contract for KPMG'); simulateTool('signContract', { contractName: 'KPMG' }); }} className="px-3 py-2 bg-white/10 rounded-lg text-xs font-bold text-white flex items-center gap-2 hover:bg-white/20">
                             <Terminal size={14} /> Test: Sign Contract
                         </button>
-                        <button onClick={() => simulateTool('controlLight', { mode: 'focus' })} className="px-3 py-2 bg-white/10 rounded-lg text-xs font-bold text-white flex items-center gap-2 hover:bg-white/20">
+                        <button onClick={() => { speak('Setting lights to focus mode'); simulateTool('controlLight', { mode: 'focus' }); }} className="px-3 py-2 bg-white/10 rounded-lg text-xs font-bold text-white flex items-center gap-2 hover:bg-white/20">
                             <Terminal size={14} /> Test: Lights
                         </button>
                     </div>
                 )}
 
-                <div className="flex items-center gap-6 mt-4">
-                    <button className="p-4 rounded-full bg-white/5 text-textSecondary hover:bg-white/10 hover:text-white transition-colors">
-                        <Globe size={24} />
-                    </button>
+                {/* Transcript Display */}
+                {transcript && (status === 'demo' || status === 'connected') && (
+                    <div className="w-full max-w-md bg-white/5 rounded-xl p-4 border border-white/10">
+                        <p className="text-xs text-textSecondary uppercase mb-1">You said:</p>
+                        <p className="text-white text-sm">{transcript}</p>
+                    </div>
+                )}
 
+                <div className="flex items-center gap-6 mt-4 relative">
+                    {/* Language Selector */}
+                    <div className="relative">
+                        <button
+                            onClick={() => setShowLanguageMenu(!showLanguageMenu)}
+                            className="p-4 rounded-full bg-white/5 text-textSecondary hover:bg-white/10 hover:text-white transition-colors"
+                        >
+                            <Globe size={24} />
+                        </button>
+
+                        {showLanguageMenu && (
+                            <div className="absolute bottom-16 left-1/2 -translate-x-1/2 bg-bgCard border border-white/10 rounded-xl shadow-2xl overflow-hidden min-w-[160px] z-50">
+                                <div className="p-2 border-b border-white/10">
+                                    <p className="text-xs text-textSecondary font-bold uppercase">Language</p>
+                                </div>
+                                {languages.map(lang => (
+                                    <button
+                                        key={lang.code}
+                                        onClick={() => {
+                                            setSelectedLanguage(lang.code);
+                                            setShowLanguageMenu(false);
+                                            speak(`Language set to ${lang.name}`);
+                                            if (recognitionRef.current) {
+                                                recognitionRef.current.lang = lang.code;
+                                            }
+                                        }}
+                                        className={`w-full text-left px-4 py-2 text-sm hover:bg-white/10 transition-colors ${selectedLanguage === lang.code ? 'text-accentCyan bg-accentCyan/10' : 'text-white'}`}
+                                    >
+                                        {lang.name}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Main Mic Button */}
                     <button
-                        onClick={() => setIsMicOn(!isMicOn)}
-                        className={`p-6 rounded-full transition-all duration-300 ${isMicOn ? 'bg-accentPurple text-white shadow-[0_0_30px_rgba(168,85,247,0.4)]' : 'bg-red-500/20 text-red-500 border border-red-500/50'}`}
+                        onClick={() => {
+                            if (status === 'demo') {
+                                toggleVoiceListening();
+                            }
+                            setIsMicOn(!isMicOn);
+                        }}
+                        className={`p-6 rounded-full transition-all duration-300 ${isListening
+                                ? 'bg-green-500 text-white shadow-[0_0_30px_rgba(34,197,94,0.6)] animate-pulse'
+                                : isMicOn
+                                    ? 'bg-accentPurple text-white shadow-[0_0_30px_rgba(168,85,247,0.4)]'
+                                    : 'bg-red-500/20 text-red-500 border border-red-500/50'
+                            }`}
                     >
                         {isMicOn ? <Mic size={32} /> : <MicOff size={32} />}
                     </button>
 
-                    <button className="p-4 rounded-full bg-white/5 text-textSecondary hover:bg-white/10 hover:text-white transition-colors">
+                    {/* Volume/Speaker Test */}
+                    <button
+                        onClick={() => speak('Sentinel Voice system active. Ready to receive commands.')}
+                        className="p-4 rounded-full bg-white/5 text-textSecondary hover:bg-white/10 hover:text-white transition-colors"
+                    >
                         <Volume2 size={24} />
                     </button>
                 </div>
