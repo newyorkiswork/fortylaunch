@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Mic, Send, BrainCircuit, ArrowRight, Activity, FileText, Lightbulb, Shield } from 'lucide-react';
+import { X, Mic, MicOff, Send, BrainCircuit, ArrowRight, Activity, FileText, Lightbulb, Shield } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
 import { Opportunity, Contract, AIAction } from '../types';
 
@@ -17,14 +17,60 @@ const NeuralCore: React.FC<NeuralCoreProps> = ({ isOpen, onClose, dataContext, o
         { role: 'ai', content: 'Sentinel Core online. Systems synchronized.', agent: 'Sentinel' }
     ]);
     const [isProcessing, setIsProcessing] = useState(false);
+    const [isListening, setIsListening] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
+    const recognitionRef = useRef<any>(null);
 
     useEffect(() => {
         if (scrollRef.current) {
             scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
         }
     }, [messages]);
+
+    // Setup speech recognition
+    useEffect(() => {
+        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+        if (SpeechRecognition) {
+            const recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = true;
+            recognition.lang = 'en-US';
+
+            recognition.onresult = (event: any) => {
+                const transcript = Array.from(event.results)
+                    .map((result: any) => result[0].transcript)
+                    .join('');
+                setInput(transcript);
+            };
+
+            recognition.onend = () => {
+                setIsListening(false);
+            };
+
+            recognition.onerror = (event: any) => {
+                console.error('Speech recognition error:', event.error);
+                setIsListening(false);
+            };
+
+            recognitionRef.current = recognition;
+        }
+    }, []);
+
+    const toggleListening = () => {
+        if (!recognitionRef.current) {
+            alert('Speech recognition not supported in this browser');
+            return;
+        }
+
+        if (isListening) {
+            recognitionRef.current.stop();
+            setIsListening(false);
+        } else {
+            recognitionRef.current.start();
+            setIsListening(true);
+        }
+    };
 
     const handleExecuteAction = (action: AIAction) => {
         onAction(action);
@@ -192,8 +238,8 @@ const NeuralCore: React.FC<NeuralCoreProps> = ({ isOpen, onClose, dataContext, o
                             )}
 
                             <div className={`relative max-w-[85%] p-4 rounded-2xl text-sm ${msg.role === 'user'
-                                    ? 'bg-accentPurple/10 border border-accentPurple/20 text-white rounded-br-none'
-                                    : 'bg-white/5 border border-white/10 text-textSecondary rounded-bl-none'
+                                ? 'bg-accentPurple/10 border border-accentPurple/20 text-white rounded-br-none'
+                                : 'bg-white/5 border border-white/10 text-textSecondary rounded-bl-none'
                                 }`}>
                                 {msg.content}
 
@@ -249,8 +295,11 @@ const NeuralCore: React.FC<NeuralCoreProps> = ({ isOpen, onClose, dataContext, o
                                 className="w-full bg-bgDark border border-border rounded-xl p-4 pr-12 text-white focus:outline-none focus:border-accentCyan transition-colors placeholder:text-textSecondary/50"
                                 autoFocus
                             />
-                            <button className="absolute right-3 top-1/2 -translate-y-1/2 text-textSecondary hover:text-accentCyan">
-                                <Mic size={20} />
+                            <button
+                                onClick={toggleListening}
+                                className={`absolute right-3 top-1/2 -translate-y-1/2 transition-colors ${isListening ? 'text-red-500 animate-pulse' : 'text-textSecondary hover:text-accentCyan'}`}
+                            >
+                                {isListening ? <MicOff size={20} /> : <Mic size={20} />}
                             </button>
                         </div>
                         <button
