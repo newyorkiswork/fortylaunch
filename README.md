@@ -1,17 +1,22 @@
-# FortyLaunch
+# FortyLaunch CRM
 
-**An AI-orchestrated CRM with voice-first command, multi-channel interaction tracking, and contract automation.**
+**An operations-focused CRM I built for the FortyLaunch team — voice-first AI orchestrator that captures and structures deal information in the moment, so nothing gets lost as the team scales.**
 
 > **Live:** [fortylaunch.vercel.app](https://fortylaunch.vercel.app)
+> **Built for:** the FortyLaunch operations workflow.
 > **AI Studio source (round-trip editable):** [ai.studio/apps/drive/1lyYbv2NbJ5oNyL1izOLmmIPCiP2mDHHG](https://ai.studio/apps/drive/1lyYbv2NbJ5oNyL1izOLmmIPCiP2mDHHG)
 
-## What it is
+---
 
-FortyLaunch is a pipeline-management CRM where every primitive — opportunities, contracts, calendar, interactions, AI agents, files — is reachable from a single **voice-first AI orchestrator** plus a command bar. The user can talk to the CRM in real time, and the AI triggers structured CRM actions through a typed `AIAction` contract.
+## Why this exists
 
-### Core surfaces
+FortyLaunch operates fast — that is the business. The downside of speed is that information from calls, meetings, contracts, and the long tail of client touches does not always reach the next person on the deal when they need it. As the team scales, "ask whoever was in the room" stops being a workflow.
 
-- **Opportunities / pipeline** — `Qualification → Discovery → Proposal → Negotiation → Closed Won → Active Project` with probability, sentiment, contacts, and project details
+This CRM is purpose-built for that environment: AI captures and structures information in the moment, the data layer is the source of truth, and a voice-first orchestrator turns the CRM into a control plane the team can actually keep up with.
+
+## What it does
+
+- **Pipeline** — opportunities through `Qualification → Discovery → Proposal → Negotiation → Closed Won → Active Project`, with probability, sentiment, contacts, and project details
 - **Contracts** — draft / pending signature / signed lifecycle with an in-app **e-signature pad**, AI summaries, and signer tracking
 - **Calendar** — meetings, calls, tasks, and deadlines with attendees and recurrence
 - **Interactions** — unified log across phone, video (Zoom / GoogleMeet), in-person, email, Slack, voice notes, and network events; with AI summaries, sentiment, action items, key topics, and expense capture
@@ -23,7 +28,7 @@ FortyLaunch is a pipeline-management CRM where every primitive — opportunities
 
 - **Gemini Live API** for bidirectional voice. Declared tools include `signContract`, `controlLight`, and other CRM-dispatching functions; tool calls are converted into typed `AIAction` payloads (`SIGN_CONTRACT`, `SCHEDULE_MEETING`, `SEND_DOCUMENT`, `DRAFT_REPLY`, `LOG_ACTIVITY`, `NAVIGATE_*`).
 - **Gemini** for contract summaries, interaction summarization, sentiment, and the executive briefing.
-- **Typed action contract** between AI and UI. The model never mutates state directly — it emits actions, the app validates and applies them. This is what keeps voice a real control plane and not a chat-toy.
+- **Typed action contract** between AI and UI. The model never mutates state directly — it emits actions, the app validates and applies them. This keeps the AI honest and the CRM auditable, which is what makes a voice agent usable on a fast-moving sales floor.
 
 ## Stack
 
@@ -61,8 +66,13 @@ npm run dev
 - Services in `lib/`
 - `metadata.json` is the AI Studio handshake file — it declares `microphone` and `camera` frame permissions for the voice + capture flows
 
+## What I learned building this for FortyLaunch
+
+Operations-grade AI has to be **deterministic from the user's seat.** A voice agent on a fast-paced sales floor is only useful if every action it takes is typed, auditable, and reversible. That is why I put the `AIAction` contract between Gemini and the UI. Without it, you ship a chat-toy. With it, the CRM becomes a real control plane that scales **with** the team instead of fighting it.
+
 ## What's next
 
 - Wire the typed `AIAction` dispatcher into Supabase row-level mutations end-to-end
 - Persist live voice sessions as searchable interaction records
 - Multi-tenant auth + per-org agent configuration
+- Tighter integration with FortyLaunch's existing tooling (calendar / email / Slack sources)
